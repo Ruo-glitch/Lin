@@ -3,50 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我們的回憶錄 ✨</title>
+    <title>多彩煙火與我們的回憶 ✨</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #000;
-            overflow: hidden;
+            background-color: #000; /* 深色背景 */
+            overflow: hidden; /* 防止捲動條 */
             font-family: 'Microsoft JhengHei', sans-serif;
             color: white;
-            cursor: pointer; /* 提示使用者可以點擊 */
+            cursor: crosshair; /* 提示可以點擊放煙火 */
         }
 
+        /* 內容區域樣式 */
         #content-layer {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            z-index: 10;
+            z-index: 10; /* 確保在煙火上方 */
             width: 90%;
             max-width: 500px;
-            transition: opacity 0.5s ease; /* 切換時的淡入淡出 */
+            pointer-events: none; /* 讓點擊預設穿透，除非點到子元素 */
+            transition: opacity 0.5s ease;
         }
 
+        /* 照片樣式 - 只有這裡可以點擊切換 */
         .photo-frame {
             width: 300px;
             height: 300px;
             border: 10px solid white;
             border-radius: 10px;
-            box-shadow: 0 0 30px rgba(255,255,255,0.3);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
             object-fit: cover;
             margin-bottom: 20px;
+            pointer-events: auto; /* 啟用照片的點擊 */
+            cursor: pointer;
         }
 
         h1 {
             font-size: 2rem;
             margin: 10px 0;
-            text-shadow: 0 0 15px #ffb6c1;
+            text-shadow: 0 0 15px #ffb6c1; /* 粉色發光 */
         }
 
         p {
             font-size: 1.1rem;
             line-height: 1.6;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5); /* 半透明背景增加可讀性 */
             padding: 10px;
             border-radius: 8px;
         }
@@ -57,25 +62,27 @@
             width: 100%;
             text-align: center;
             font-size: 0.9rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
         }
 
+        /* 畫布樣式 */
         canvas { display: block; }
     </style>
 </head>
 <body>
 
     <div id="content-layer">
-        <img id="display-photo" src="photo1.jpg" alt="Memory" class="photo-frame">
+        <img id="display-photo" src="photo1.jpg" alt="Memory" class="photo-frame" onclick="updateContent(); event.stopPropagation();">
         <h1 id="display-title">載入中...</h1>
-        <p id="display-text">點擊螢幕開始回顧</p>
+        <p id="display-text">點擊照片開始回顧</p>
     </div>
 
-    <div class="hint">按螢幕任何地方切換下一頁 🖱️</div>
+    <div class="hint">點擊照片切換內容 | 點擊背景放煙火 ✨</div>
     <canvas id="fireworks"></canvas>
 
     <script>
-        // --- 1. 資料設定區 ---
+        // --- 1. 資料設定區 (請在這裡更換你的照片和文字) ---
         const memories = [
             {
                 img: "photo1.jpg", // 替換成你的第一張照片檔名
@@ -96,14 +103,14 @@
 
         let currentIndex = 0;
 
-        // --- 2. 切換邏輯 ---
+        // --- 2. 內容切換邏輯 (只被照片點擊呼叫) ---
         function updateContent() {
             const layer = document.getElementById('content-layer');
             const photo = document.getElementById('display-photo');
             const title = document.getElementById('display-title');
             const text = document.getElementById('display-text');
 
-            // 淡出效果
+            // 淡出
             layer.style.opacity = 0;
 
             setTimeout(() => {
@@ -112,23 +119,21 @@
                 title.innerText = data.title;
                 text.innerText = data.text;
                 
-                // 淡入效果
+                // 淡入
                 layer.style.opacity = 1;
-                currentIndex = (currentIndex + 1) % memories.length;
-            }, 500);
+                currentIndex = (currentIndex + 1) % memories.length; // 循環索引
+            }, 500); // 這裡的時間與 CSS transition 保持一致
         }
 
-        // 初始化顯示
+        // 初始化顯示第一筆內容
         updateContent();
 
-        // 監聽全螢幕點擊
-        window.addEventListener('mousedown', updateContent);
-
-        // --- 3. 煙火動畫引擎 (自動播放) ---
+        // --- 3. 多彩煙火動畫引擎 ---
         const canvas = document.getElementById('fireworks');
         const ctx = canvas.getContext('2d');
         let particles = [];
 
+        // 設定畫布尺寸
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -137,60 +142,101 @@
         resize();
 
         class Particle {
-            constructor(x, y, color) {
+            constructor(x, y, color, speed, size) {
                 this.x = x;
                 this.y = y;
                 this.color = color;
+                // 3.2 煙火範圍更大：增加初始速度和變異數
                 this.velocity = {
-                    x: (Math.random() - 0.5) * 6,
-                    y: (Math.random() - 0.5) * 6
+                    x: (Math.random() - 0.5) * speed * (Math.random() * 2 + 1),
+                    y: (Math.random() - 0.5) * speed * (Math.random() * 2 + 1)
                 };
                 this.alpha = 1;
-                this.friction = 0.96;
+                this.friction = 0.96; // 稍微減少摩擦力，讓粒子飛得更遠
+                this.size = size; // 粒子大小
             }
+
             draw() {
                 ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
                 ctx.restore();
             }
+
             update() {
                 this.velocity.x *= this.friction;
                 this.velocity.y *= this.friction;
+                this.y += 0.02; // 增加一點重力
                 this.x += this.velocity.x;
                 this.y += this.velocity.y;
-                this.alpha -= 0.012;
+                this.alpha -= 0.01; // 慢慢淡出
             }
         }
 
-        function createFirework() {
-            const x = Math.random() * canvas.width;
-            const y = Math.random() * canvas.height * 0.6; // 煙火主要在畫面上半部
-            const color = `hsl(${Math.random() * 360}, 60%, 70%)`;
-            for (let i = 0; i < 60; i++) {
-                particles.push(new Particle(x, y, color));
+        // 3.1 煙火多色彩一點：產生更豐富的顏色
+        function getRandomColor() {
+            // 使用 HSL 顏色空間，色相(H)在 0-360 之間隨機，飽和度(S)和亮度(L)保持較高值以呈現鮮豔色彩
+            const hue = Math.random() * 360;
+            const saturation = 80 + Math.random() * 20; // 80%-100%
+            const lightness = 60 + Math.random() * 20;  // 60%-80%
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        // 產生煙火爆炸
+        function createFirework(x, y) {
+            // 3.2 煙火範圍更大：增加粒子數量和速度，減小單個粒子大小
+            const particleCount = 120 + Math.random() * 80; // 120-200 個粒子
+            const speed = 10 + Math.random() * 10; // 初始速度較大
+            const size = 1 + Math.random() * 1.5;   // 粒子大小 1-2.5 像素
+
+            // 為這一次煙火選擇多個隨機顏色
+            const colorCount = 3 + Math.floor(Math.random() * 3); // 3-5 種顏色
+            const colors = [];
+            for (let i = 0; i < colorCount; i++) {
+                colors.push(getRandomColor());
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                // 為每個粒子分配一種顏色
+                const color = colors[i % colors.length];
+                particles.push(new Particle(x, y, color, speed, size));
             }
         }
 
+        // 動態更新畫布
         function animate() {
             requestAnimationFrame(animate);
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            // 畫面清除，保留一點點軌跡效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             particles.forEach((p, i) => {
                 if (p.alpha > 0) {
                     p.update();
                     p.draw();
                 } else {
-                    particles.splice(i, 1);
+                    particles.splice(i, 1); // 移除淡出的粒子
                 }
             });
         }
 
-        // 每 1.2 秒自動施放一個煙火
-        setInterval(createFirework, 1200);
+        // 監聽畫布的點擊事件 (只會捕捉照片以外區域的點擊)
+        window.addEventListener('mousedown', (e) => {
+            // 在點擊位置產生煙火
+            createFirework(e.clientX, e.clientY);
+        });
+
+        // 每 1 秒自動施放一個煙火
+        setInterval(() => {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height * 0.7; // 集中在畫面中上部
+            createFirework(x, y);
+        }, 1000);
+
+        // 開始動畫迴圈
         animate();
     </script>
 </body>
