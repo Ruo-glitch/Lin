@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>白色情人節快樂 ❤️</title>
+    <title>我們的回憶錄 ✨</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #000; /* 深色背景襯托煙火 */
+            background-color: #000;
             overflow: hidden;
             font-family: 'Microsoft JhengHei', sans-serif;
             color: white;
+            cursor: pointer; /* 提示使用者可以點擊 */
         }
 
-        /* 照片區域樣式 */
         #content-layer {
             position: absolute;
             top: 50%;
@@ -22,56 +22,113 @@
             transform: translate(-50%, -50%);
             text-align: center;
             z-index: 10;
-            pointer-events: none; /* 讓點擊穿透到畫布觸發煙火 */
+            width: 90%;
+            max-width: 500px;
+            transition: opacity 0.5s ease; /* 切換時的淡入淡出 */
         }
 
         .photo-frame {
-            width: 250px;
-            height: 250px;
-            border: 8px solid white;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(255,255,255,0.5);
-            margin-bottom: 20px;
+            width: 300px;
+            height: 300px;
+            border: 10px solid white;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255,255,255,0.3);
             object-fit: cover;
-            pointer-events: auto; /* 照片本身可以互動 */
-            transition: transform 0.3s ease;
-        }
-
-        .photo-frame:hover {
-            transform: scale(1.1) rotate(2deg);
+            margin-bottom: 20px;
         }
 
         h1 {
-            font-size: 2.5rem;
-            text-shadow: 0 0 10px #ff69b4;
+            font-size: 2rem;
             margin: 10px 0;
+            text-shadow: 0 0 15px #ffb6c1;
         }
 
         p {
-            font-size: 1.2rem;
-            opacity: 0.8;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 8px;
         }
 
-        canvas {
-            display: block;
+        .hint {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
         }
+
+        canvas { display: block; }
     </style>
 </head>
 <body>
 
     <div id="content-layer">
-        <img src="https://via.placeholder.com/250" alt="我們的照片" class="photo-frame">
-        <h1>白色情人節快樂</h1>
-        <p>點擊螢幕，為你點亮整片星空 ✨</p>
+        <img id="display-photo" src="photo1.jpg" alt="Memory" class="photo-frame">
+        <h1 id="display-title">載入中...</h1>
+        <p id="display-text">點擊螢幕開始回顧</p>
     </div>
 
+    <div class="hint">按螢幕任何地方切換下一頁 🖱️</div>
     <canvas id="fireworks"></canvas>
 
     <script>
+        // --- 1. 資料設定區 ---
+        const memories = [
+            {
+                img: "photo1.jpg", // 替換成你的第一張照片檔名
+                title: "第一站：遇見",
+                text: "那天陽光很好，就像你給我的感覺。"
+            },
+            {
+                img: "photo2.jpg", // 替換成你的第二張照片檔名
+                title: "平凡的幸福",
+                text: "即使只是坐在公園，有你在就很浪漫。"
+            },
+            {
+                img: "photo3.jpg", // 替換成你的第三張照片檔名
+                title: "白色情人節快樂",
+                text: "未來的每一天，都要一起看煙火。"
+            }
+        ];
+
+        let currentIndex = 0;
+
+        // --- 2. 切換邏輯 ---
+        function updateContent() {
+            const layer = document.getElementById('content-layer');
+            const photo = document.getElementById('display-photo');
+            const title = document.getElementById('display-title');
+            const text = document.getElementById('display-text');
+
+            // 淡出效果
+            layer.style.opacity = 0;
+
+            setTimeout(() => {
+                const data = memories[currentIndex];
+                photo.src = data.img;
+                title.innerText = data.title;
+                text.innerText = data.text;
+                
+                // 淡入效果
+                layer.style.opacity = 1;
+                currentIndex = (currentIndex + 1) % memories.length;
+            }, 500);
+        }
+
+        // 初始化顯示
+        updateContent();
+
+        // 監聽全螢幕點擊
+        window.addEventListener('mousedown', updateContent);
+
+        // --- 3. 煙火動畫引擎 (自動播放) ---
         const canvas = document.getElementById('fireworks');
         const ctx = canvas.getContext('2d');
+        let particles = [];
 
-        // 設定畫布尺寸
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -85,66 +142,55 @@
                 this.y = y;
                 this.color = color;
                 this.velocity = {
-                    x: (Math.random() - 0.5) * 8,
-                    y: (Math.random() - 0.5) * 8
+                    x: (Math.random() - 0.5) * 6,
+                    y: (Math.random() - 0.5) * 6
                 };
                 this.alpha = 1;
-                this.friction = 0.95;
+                this.friction = 0.96;
             }
-
             draw() {
                 ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
                 ctx.restore();
             }
-
             update() {
                 this.velocity.x *= this.friction;
                 this.velocity.y *= this.friction;
                 this.x += this.velocity.x;
                 this.y += this.velocity.y;
-                this.alpha -= 0.01;
+                this.alpha -= 0.012;
             }
         }
 
-        let particles = [];
-
-        function createFirework(x, y) {
-            const color = `hsl(${Math.random() * 360}, 70%, 60%)`;
-            for (let i = 0; i < 100; i++) {
+        function createFirework() {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height * 0.6; // 煙火主要在畫面上半部
+            const color = `hsl(${Math.random() * 360}, 60%, 70%)`;
+            for (let i = 0; i < 60; i++) {
                 particles.push(new Particle(x, y, color));
             }
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            particles.forEach((particle, index) => {
-                if (particle.alpha > 0) {
-                    particle.update();
-                    particle.draw();
+            particles.forEach((p, i) => {
+                if (p.alpha > 0) {
+                    p.update();
+                    p.draw();
                 } else {
-                    particles.splice(index, 1);
+                    particles.splice(i, 1);
                 }
             });
         }
 
-        // 點擊觸發煙火
-        window.addEventListener('mousedown', (e) => {
-            createFirework(e.clientX, e.clientY);
-        });
-
-        // 自動定時施放煙火
-        setInterval(() => {
-            createFirework(Math.random() * canvas.width, Math.random() * canvas.height * 0.5);
-        }, 1500);
-
+        // 每 1.2 秒自動施放一個煙火
+        setInterval(createFirework, 1200);
         animate();
     </script>
 </body>
